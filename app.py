@@ -1,26 +1,3 @@
-%%writefile app.py
-"""
-=============================================================
-  TUBERKULOSIS CLASSIFIER — Streamlit App (Colab-Friendly)
-=============================================================
-Jalankan di Colab:
-    !pip install streamlit pyngrok openpyxl plotly scikit-learn -q
-    from pyngrok import ngrok
-    ngrok.set_auth_token("YOUR_NGROK_TOKEN")  # optional
-    !streamlit run app.py &
-    public_url = ngrok.connect(8501)
-    print(public_url)
-
-Atau lokal:
-    pip install streamlit openpyxl plotly scikit-learn
-    streamlit run app.py
-
-CATATAN:
-    Letakkan file "Tuberculosis_Trends 2000-2023.xlsx" di folder yang sama dengan
-    app.py — dashboard otomatis membaca file tersebut saat pertama jalan.
-    Dataset aktif bisa diganti kapan saja lewat menu sidebar "📤 Ganti Dataset".
-"""
-
 import streamlit as st
 import pandas as pd
 import numpy as np
