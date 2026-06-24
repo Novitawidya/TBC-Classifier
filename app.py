@@ -24,8 +24,12 @@ REQUIRED_COLUMNS = ["Country", "Region", "Income_Level", "Year", "TB_Treatment_S
 
 
 def validate_columns(dataframe):
-    """Kembalikan list kolom wajib yang hilang dari dataframe."""
     return [c for c in REQUIRED_COLUMNS if c not in dataframe.columns]
+
+
+def safe_cols(df, candidates):
+    """Kembalikan hanya kolom dari candidates yang benar-benar ada di df."""
+    return [c for c in candidates if c in df.columns]
 
 
 # ─────────────────────────────────────────────
@@ -337,7 +341,7 @@ header { visibility: visible; }
 
 
 # ─────────────────────────────────────────────
-# DATA LOADING — terpusat via st.session_state
+# DATA LOADING
 # ─────────────────────────────────────────────
 if "df" not in st.session_state:
     st.session_state["df"] = None
@@ -369,14 +373,7 @@ if st.session_state["df"] is None:
     if st.session_state["load_error"]:
         st.error(f"❌ {st.session_state['load_error']}")
     else:
-        st.error(f"❌ File **{DEFAULT_FILE}** tidak ditemukan. Pastikan file ada di folder yang sama dengan `app.py`.")
-
-    st.markdown(f"""
-    <div class="info-box">
-    📌 Letakkan file <b>{DEFAULT_FILE}</b> di folder yang sama dengan <b>app.py</b>, lalu restart dashboard.<br>
-    Atau gunakan menu <b>📤 Ganti Dataset</b> di bawah untuk upload manual.
-    </div>
-    """, unsafe_allow_html=True)
+        st.error(f"❌ File **{DEFAULT_FILE}** tidak ditemukan.")
 
     gate_file = st.file_uploader("📂 Upload Dataset (.xlsx)", type=["xlsx"], key="gate_upload")
     if gate_file is not None:
@@ -399,7 +396,6 @@ if st.session_state["df"] is None:
 
 @st.cache_resource(show_spinner=False)
 def train_models(df_hash):
-    """Train all 3 models dan return results."""
     df = st.session_state["df"]
     median_success = df["TB_Treatment_Success_Rate"].median()
     df = df.copy()
@@ -437,9 +433,9 @@ def train_models(df_hash):
     def metrics(yt, yp, ypr):
         return {
             "Accuracy":  round(accuracy_score(yt, yp), 4),
-            "Precision": round(precision_score(yt, yp), 4),
-            "Recall":    round(recall_score(yt, yp), 4),
-            "F1-Score":  round(f1_score(yt, yp), 4),
+            "Precision": round(precision_score(yt, yp, zero_division=0), 4),
+            "Recall":    round(recall_score(yt, yp, zero_division=0), 4),
+            "F1-Score":  round(f1_score(yt, yp, zero_division=0), 4),
             "AUC":       round(roc_auc_score(yt, ypr), 4),
         }
 
@@ -486,9 +482,6 @@ def train_models(df_hash):
     }
 
 
-# ─────────────────────────────────────────────
-# Dataset
-# ─────────────────────────────────────────────
 df = st.session_state["df"]
 
 # ─────────────────────────────────────────────
@@ -530,53 +523,21 @@ with st.sidebar:
     with st.expander("📖 Keterangan Variabel", expanded=False):
         st.markdown("""
         <div style='font-size:.82rem;color:#DCE3F0;line-height:1.85'>
-
         <b style='color:#14E0B4'>🌍 Identitas</b><br>
         <b>Country</b> — Nama negara<br>
-        <b>Region</b> — Wilayah WHO (Africa, Americas, dll.)<br>
-        <b>Income_Level</b> — Klasifikasi pendapatan negara (Low / Lower-Middle / Upper-Middle / High)<br>
-        <b>Year</b> — Tahun pengamatan (2000–2023)<br><br>
-
-        <b style='color:#14E0B4'>📊 Epidemiologi</b><br>
-        <b>TB_Cases</b> — Jumlah kasus TBC baru per tahun<br>
-        <b>TB_Deaths</b> — Jumlah kematian akibat TBC per tahun<br>
-        <b>TB_Incidence_Rate</b> — Kasus baru per 100.000 penduduk<br>
-        <b>TB_Mortality_Rate</b> — Kematian TBC per 100.000 penduduk<br>
-        <b>TB_Treatment_Success_Rate</b> — % pasien TBC yang berhasil menyelesaikan pengobatan <i>(variabel target)</i><br><br>
-
-        <b style='color:#14E0B4'>🦠 Resistensi & Koinfeksi</b><br>
-        <b>Drug_Resistant_TB_Cases</b> — Jumlah kasus TBC resisten obat (MDR/XDR-TB)<br>
-        <b>HIV_CoInfected_TB_Cases</b> — Jumlah pasien TBC dengan koinfeksi HIV<br>
-        <b>HIV_Testing_Coverage</b> — % pasien TBC yang menjalani tes HIV (%)<br><br>
-
-        <b style='color:#14E0B4'>👥 Populasi & Ekonomi</b><br>
-        <b>Population</b> — Jumlah penduduk negara<br>
-        <b>GDP_Per_Capita</b> — PDB per kapita (USD)<br>
-        <b>Health_Expenditure_Per_Capita</b> — Pengeluaran kesehatan per kapita (USD)<br>
-        <b>Urban_Population_Percentage</b> — % penduduk yang tinggal di perkotaan<br><br>
-
-        <b style='color:#14E0B4'>🍽️ Sosial & Kesehatan</b><br>
-        <b>Malnutrition_Prevalence</b> — Prevalensi malnutrisi di populasi (%)<br>
-        <b>Smoking_Prevalence</b> — Prevalensi perokok di populasi (%)<br>
-        <b>Access_To_Health_Services</b> — % penduduk dengan akses layanan kesehatan<br>
-        <b>BCG_Vaccination_Coverage</b> — % cakupan vaksinasi BCG pada bayi<br><br>
-
-        <b style='color:#14E0B4'>🏥 Kapasitas Layanan</b><br>
-        <b>TB_Doctors_Per_100K</b> — Jumlah dokter TBC per 100.000 penduduk<br>
-        <b>TB_Hospitals_Per_Million</b> — Jumlah fasilitas kesehatan TBC per 1 juta penduduk<br><br>
-
+        <b>Region</b> — Wilayah WHO<br>
+        <b>Income_Level</b> — Klasifikasi pendapatan<br>
+        <b>Year</b> — Tahun pengamatan<br><br>
         <b style='color:#14E0B4'>🎯 Target Klasifikasi</b><br>
         <b>High (1)</b> — Success rate ≥ median dataset<br>
         <b>Low (0)</b> — Success rate &lt; median dataset
-
         </div>
         """, unsafe_allow_html=True)
 
     st.markdown("---")
     st.markdown("""
     <div class="info-box" style="font-size:.85rem;padding:14px 16px;">
-    💡 Ingin pakai dataset lain? Buka menu <b>📤 Ganti Dataset</b> — setelah dikonfirmasi,
-    seluruh dashboard otomatis memakai data baru dan model dilatih ulang.
+    💡 Ganti dataset via menu <b>📤 Ganti Dataset</b>.
     </div>
     """, unsafe_allow_html=True)
 
@@ -641,33 +602,21 @@ if page == "🏠 Home":
             </p>
             <p style="line-height:1.85;font-size:1.05rem;">
             TBC menyebar melalui <b>udara</b> — ketika penderita batuk, bersin, atau berbicara, percikan
-            droplet yang mengandung bakteri TB terhirup oleh orang di sekitarnya. Tidak semua yang
-            terinfeksi akan langsung sakit; sebagian mengalami <b>TB Laten</b> (tidak menular, tidak bergejala)
-            yang dapat aktif jika sistem imun melemah.
+            droplet yang mengandung bakteri TB terhirup oleh orang di sekitarnya.
             </p>
         </div>
         """, unsafe_allow_html=True)
 
         st.markdown('<p class="sec-header">⚠️ Bahaya & Dampak TBC</p>', unsafe_allow_html=True)
         st.markdown("""
-        <div class="warn-box">
-        <b>🦠 Resistensi Obat (MDR-TB / XDR-TB)</b><br>
-        Varian TBC yang kebal terhadap obat lini pertama semakin meningkat dan jauh lebih sulit diobati.
-        </div>
-        <div class="warn-box">
-        <b>🫀 Komplikasi Organ</b><br>
-        TBC yang tidak diobati dapat merusak paru secara permanen, menyebabkan gagal napas, meningitis TB,
-        dan TB milier yang menyebar ke seluruh tubuh.
-        </div>
-        <div class="warn-box">
-        <b>💔 Koinfeksi HIV</b><br>
-        Penderita HIV 20× lebih berisiko mengembangkan TB aktif. Keduanya memperburuk kondisi satu sama lain.
-        </div>
-        <div class="warn-box">
-        <b>💸 Beban Ekonomi</b><br>
-        Satu kasus TB mengakibatkan hilangnya rata-rata 3–4 bulan kerja produktif, menghantam keluarga
-        miskin paling keras.
-        </div>
+        <div class="warn-box"><b>🦠 Resistensi Obat (MDR-TB / XDR-TB)</b><br>
+        Varian TBC yang kebal terhadap obat lini pertama semakin meningkat dan jauh lebih sulit diobati.</div>
+        <div class="warn-box"><b>🫀 Komplikasi Organ</b><br>
+        TBC yang tidak diobati dapat merusak paru secara permanen, menyebabkan gagal napas dan meningitis TB.</div>
+        <div class="warn-box"><b>💔 Koinfeksi HIV</b><br>
+        Penderita HIV 20× lebih berisiko mengembangkan TB aktif.</div>
+        <div class="warn-box"><b>💸 Beban Ekonomi</b><br>
+        Satu kasus TB mengakibatkan hilangnya rata-rata 3–4 bulan kerja produktif.</div>
         """, unsafe_allow_html=True)
 
     with col2:
@@ -687,7 +636,6 @@ if page == "🏠 Home":
             <span class="tag">Keringat malam</span>
             <span class="tag">Berat badan turun</span>
             <span class="tag">Lemas & lesu</span>
-            <span class="tag">Nafsu makan hilang</span>
         </div>
         </div>
         """, unsafe_allow_html=True)
@@ -696,9 +644,9 @@ if page == "🏠 Home":
         steps = [
             ("1", "Deteksi Dini", "Tes dahak (sputum smear), foto Rontgen, TCM (Xpert MTB/RIF)"),
             ("2", "Pengobatan OAT", "6 bulan: 2 bulan fase intensif (RHZE) + 4 bulan fase lanjutan (RH)"),
-            ("3", "DOTS Strategy", "Pengawasan langsung menelan obat oleh PMO (Pengawas Menelan Obat)"),
+            ("3", "DOTS Strategy", "Pengawasan langsung menelan obat oleh PMO"),
             ("4", "Follow-up", "Kontrol rutin, cek dahak bulan ke-2, 5, dan 6"),
-            ("5", "MDR-TB", "Pengobatan 18–24 bulan dengan obat lini kedua yang lebih kompleks"),
+            ("5", "MDR-TB", "Pengobatan 18–24 bulan dengan obat lini kedua"),
         ]
         for num, title, desc in steps:
             st.markdown(f"""
@@ -715,32 +663,36 @@ if page == "🏠 Home":
 
     st.markdown('<p class="sec-header">📈 Tren TBC Global dari Dataset (2000–2023)</p>', unsafe_allow_html=True)
 
-    trend = df.groupby("Year")[["TB_Incidence_Rate", "TB_Treatment_Success_Rate", "TB_Mortality_Rate"]].mean().reset_index()
+    # FIX: hanya pakai kolom yang ada
+    trend_cols = safe_cols(df, ["TB_Incidence_Rate", "TB_Treatment_Success_Rate", "TB_Mortality_Rate"])
+    trend = df.groupby("Year")[trend_cols].mean().reset_index()
 
     fig = make_subplots(specs=[[{"secondary_y": True}]])
-    fig.add_trace(go.Scatter(
-        x=trend["Year"], y=trend["TB_Incidence_Rate"],
-        name="Incidence Rate", line=dict(color="#FF7A7A", width=3),
-        mode="lines+markers", marker=dict(size=6)
-    ), secondary_y=False)
-    fig.add_trace(go.Scatter(
-        x=trend["Year"], y=trend["TB_Mortality_Rate"],
-        name="Mortality Rate", line=dict(color="#FFD166", width=3, dash="dot"),
-        mode="lines+markers", marker=dict(size=6)
-    ), secondary_y=False)
-    fig.add_trace(go.Scatter(
-        x=trend["Year"], y=trend["TB_Treatment_Success_Rate"],
-        name="Treatment Success Rate", line=dict(color="#14E0B4", width=4),
-        mode="lines+markers", marker=dict(size=7), fill="tozeroy",
-        fillcolor="rgba(20,224,180,0.08)"
-    ), secondary_y=True)
+    if "TB_Incidence_Rate" in trend.columns:
+        fig.add_trace(go.Scatter(
+            x=trend["Year"], y=trend["TB_Incidence_Rate"],
+            name="Incidence Rate", line=dict(color="#FF7A7A", width=3),
+            mode="lines+markers", marker=dict(size=6)
+        ), secondary_y=False)
+    if "TB_Mortality_Rate" in trend.columns:
+        fig.add_trace(go.Scatter(
+            x=trend["Year"], y=trend["TB_Mortality_Rate"],
+            name="Mortality Rate", line=dict(color="#FFD166", width=3, dash="dot"),
+            mode="lines+markers", marker=dict(size=6)
+        ), secondary_y=False)
+    if "TB_Treatment_Success_Rate" in trend.columns:
+        fig.add_trace(go.Scatter(
+            x=trend["Year"], y=trend["TB_Treatment_Success_Rate"],
+            name="Treatment Success Rate", line=dict(color="#14E0B4", width=4),
+            mode="lines+markers", marker=dict(size=7), fill="tozeroy",
+            fillcolor="rgba(20,224,180,0.08)"
+        ), secondary_y=True)
 
     fig.update_layout(
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         font=dict(color="#DCE3F0", size=13),
         legend=dict(bgcolor="rgba(0,0,0,0)", orientation="h", y=1.12, font=dict(size=13)),
-        hovermode="x unified",
-        height=420,
+        hovermode="x unified", height=420,
         margin=dict(l=0, r=0, t=30, b=0),
     )
     fig.update_xaxes(showgrid=False, linecolor="#2a2f3e")
@@ -771,13 +723,13 @@ elif page == "📊 Analisis":
 
     st.markdown(f"""
     <div class="info-box">
-    📊 Halaman ini menggunakan dataset aktif: <b>{st.session_state['data_source']}</b> agar hasil analisis dan
-    model konsisten dengan halaman Prediksi. Untuk mengganti dataset, gunakan menu <b>📤 Ganti Dataset</b> di sidebar.
+    📊 Dataset aktif: <b>{st.session_state['data_source']}</b>
     </div>
     """, unsafe_allow_html=True)
 
     tab1, tab2, tab3, tab4 = st.tabs(["📋 Karakteristik Data", "📊 Visualisasi EDA", "⚔️ Perbandingan Model", "🎯 Output Model"])
 
+    # ── TAB 1: Karakteristik Data ──────────────────
     with tab1:
         st.markdown('<p class="sec-header">📋 Informasi Dataset</p>', unsafe_allow_html=True)
         c1, c2, c3, c4 = st.columns(4)
@@ -808,8 +760,8 @@ elif page == "📊 Analisis":
             fig_inc = px.bar(inc_cnt, x="Income_Level", y="Count",
                              color="Count", color_continuous_scale="teal", text="Count")
             fig_inc.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                                   font=dict(color="#DCE3F0", size=13), height=320, margin=dict(t=10,b=0),
-                                   coloraxis_showscale=False)
+                                   font=dict(color="#DCE3F0", size=13), height=320,
+                                   margin=dict(t=10,b=0), coloraxis_showscale=False)
             fig_inc.update_traces(textposition="outside", textfont=dict(color="#FFFFFF"))
             st.plotly_chart(fig_inc, use_container_width=True)
 
@@ -824,29 +776,38 @@ elif page == "📊 Analisis":
         else:
             st.dataframe(mv.rename("Missing Count"), use_container_width=True)
 
+    # ── TAB 2: EDA ────────────────────────────────
     with tab2:
         st.markdown('<p class="sec-header">📊 Exploratory Data Analysis</p>', unsafe_allow_html=True)
 
-        num_cols = ["TB_Incidence_Rate", "TB_Mortality_Rate", "TB_Treatment_Success_Rate",
-                    "Health_Expenditure_Per_Capita", "Access_To_Health_Services", "BCG_Vaccination_Coverage"]
+        # FIX: hanya tampilkan kolom yang benar-benar ada
+        eda_candidates = [
+            "TB_Incidence_Rate", "TB_Mortality_Rate", "TB_Treatment_Success_Rate",
+            "Health_Expenditure_Per_Capita", "Access_To_Health_Services", "BCG_Vaccination_Coverage",
+            "GDP_Per_Capita", "Urban_Population_Percentage", "Malnutrition_Prevalence",
+        ]
+        num_cols = safe_cols(df, eda_candidates)
 
-        st.markdown("**📈 Distribusi Variabel Kunci**")
-        for i in range(0, len(num_cols), 3):
-            cols = st.columns(3)
-            for j, col_name in enumerate(num_cols[i:i+3]):
-                with cols[j]:
-                    fig_h = px.histogram(df, x=col_name, nbins=30,
-                                          color_discrete_sequence=["#14E0B4"],
-                                          marginal="box", opacity=0.85)
-                    fig_h.update_layout(
-                        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                        font=dict(color="#DCE3F0", size=12), height=280,
-                        margin=dict(l=0,r=0,t=30,b=0),
-                        title=dict(text=col_name.replace("_"," "), font=dict(size=13, color="#FFFFFF"))
-                    )
-                    fig_h.update_xaxes(showgrid=False)
-                    fig_h.update_yaxes(showgrid=True, gridcolor="rgba(255,255,255,0.07)")
-                    st.plotly_chart(fig_h, use_container_width=True)
+        if not num_cols:
+            st.warning("⚠️ Tidak ada kolom numerik yang cocok untuk ditampilkan.")
+        else:
+            st.markdown("**📈 Distribusi Variabel Kunci**")
+            for i in range(0, len(num_cols), 3):
+                cols = st.columns(3)
+                for j, col_name in enumerate(num_cols[i:i+3]):
+                    with cols[j]:
+                        fig_h = px.histogram(df, x=col_name, nbins=30,
+                                              color_discrete_sequence=["#14E0B4"],
+                                              marginal="box", opacity=0.85)
+                        fig_h.update_layout(
+                            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                            font=dict(color="#DCE3F0", size=12), height=280,
+                            margin=dict(l=0,r=0,t=30,b=0),
+                            title=dict(text=col_name.replace("_"," "), font=dict(size=13, color="#FFFFFF"))
+                        )
+                        fig_h.update_xaxes(showgrid=False)
+                        fig_h.update_yaxes(showgrid=True, gridcolor="rgba(255,255,255,0.07)")
+                        st.plotly_chart(fig_h, use_container_width=True)
 
         st.markdown("**📦 Treatment Success Rate per Region & Income Level**")
         col_b1, col_b2 = st.columns(2)
@@ -854,42 +815,56 @@ elif page == "📊 Analisis":
             fig_bx = px.box(df, x="Region", y="TB_Treatment_Success_Rate",
                              color="Region", color_discrete_sequence=px.colors.qualitative.Vivid)
             fig_bx.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                                  font=dict(color="#DCE3F0", size=12), height=370, showlegend=False,
-                                  margin=dict(t=10,b=0))
+                                  font=dict(color="#DCE3F0", size=12), height=370,
+                                  showlegend=False, margin=dict(t=10,b=0))
             st.plotly_chart(fig_bx, use_container_width=True)
         with col_b2:
-            order = ["Low","Lower-Middle","Upper-Middle","High"]
-            fig_bx2 = px.box(df[df["Income_Level"].isin(order)],
-                              x="Income_Level", y="TB_Treatment_Success_Rate",
-                              category_orders={"Income_Level": order},
-                              color="Income_Level",
-                              color_discrete_sequence=px.colors.sequential.Teal_r)
-            fig_bx2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                                   font=dict(color="#DCE3F0", size=12), height=370, showlegend=False,
-                                   margin=dict(t=10,b=0))
-            st.plotly_chart(fig_bx2, use_container_width=True)
+            # FIX: filter Income_Level yang benar-benar ada di data
+            income_order = ["Low","Lower-Middle","Upper-Middle","High"]
+            available_income = [x for x in income_order if x in df["Income_Level"].unique()]
+            df_inc_filtered = df[df["Income_Level"].isin(available_income)]
+            if not df_inc_filtered.empty:
+                fig_bx2 = px.box(df_inc_filtered,
+                                  x="Income_Level", y="TB_Treatment_Success_Rate",
+                                  category_orders={"Income_Level": available_income},
+                                  color="Income_Level",
+                                  color_discrete_sequence=px.colors.sequential.Teal_r)
+                fig_bx2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                                       font=dict(color="#DCE3F0", size=12), height=370,
+                                       showlegend=False, margin=dict(t=10,b=0))
+                st.plotly_chart(fig_bx2, use_container_width=True)
+            else:
+                st.info("Data Income Level tidak tersedia untuk ditampilkan.")
 
         st.markdown("**🔥 Heatmap Korelasi Variabel Numerik**")
         numeric_df = df.select_dtypes(include=[np.number])
-        corr = numeric_df.corr()
-        fig_heat = px.imshow(corr, text_auto=".2f", color_continuous_scale="RdBu_r",
-                              zmin=-1, zmax=1, aspect="auto")
-        fig_heat.update_layout(paper_bgcolor="rgba(0,0,0,0)", font=dict(color="#DCE3F0", size=11),
-                                height=560, margin=dict(t=10,b=0))
-        st.plotly_chart(fig_heat, use_container_width=True)
+        if numeric_df.shape[1] >= 2:
+            corr = numeric_df.corr()
+            fig_heat = px.imshow(corr, text_auto=".2f", color_continuous_scale="RdBu_r",
+                                  zmin=-1, zmax=1, aspect="auto")
+            fig_heat.update_layout(paper_bgcolor="rgba(0,0,0,0)", font=dict(color="#DCE3F0", size=11),
+                                    height=560, margin=dict(t=10,b=0))
+            st.plotly_chart(fig_heat, use_container_width=True)
+        else:
+            st.warning("⚠️ Tidak cukup kolom numerik untuk heatmap korelasi.")
 
         st.markdown("**🎯 Distribusi Kelas Target**")
         median_s = cache["median_success"]
         df_vis = df.copy()
         df_vis["Target"] = (df_vis["TB_Treatment_Success_Rate"] >= median_s).map({True:"High (1)", False:"Low (0)"})
-        fig_tgt = px.pie(df_vis["Target"].value_counts().reset_index(),
-                          names="Target", values="count",
+
+        # FIX: kompatibel pandas lama & baru — gunakan value_counts langsung
+        tgt_counts = df_vis["Target"].value_counts()
+        tgt_df = pd.DataFrame({"Target": tgt_counts.index, "Count": tgt_counts.values})
+
+        fig_tgt = px.pie(tgt_df, names="Target", values="Count",
                           color_discrete_map={"High (1)":"#14E0B4","Low (0)":"#FF7A7A"}, hole=0.5)
         fig_tgt.update_layout(paper_bgcolor="rgba(0,0,0,0)", font=dict(color="#DCE3F0", size=13),
                                height=320, margin=dict(t=10,b=10))
         st.plotly_chart(fig_tgt, use_container_width=True)
-        st.info(f"📌 Median Treatment Success Rate: **{median_s:.2f}%**  |  Threshold klasifikasi binary: High ≥ {median_s:.2f}%")
+        st.info(f"📌 Median Treatment Success Rate: **{median_s:.2f}%**  |  Threshold: High ≥ {median_s:.2f}%")
 
+    # ── TAB 3: Perbandingan Model ──────────────────
     with tab3:
         st.markdown('<p class="sec-header">⚔️ Perbandingan Ketiga Model</p>', unsafe_allow_html=True)
 
@@ -963,6 +938,7 @@ elif page == "📊 Analisis":
         styled = res_df.set_index("Model").style.background_gradient(cmap="YlGn", axis=0).format("{:.4f}")
         st.dataframe(styled, use_container_width=True)
 
+    # ── TAB 4: Output Model ────────────────────────
     with tab4:
         st.markdown('<p class="sec-header">🎯 Output Detail per Model</p>', unsafe_allow_html=True)
 
@@ -986,7 +962,7 @@ elif page == "📊 Analisis":
             st.plotly_chart(fig_cm, use_container_width=True)
         with col_met:
             m = cache["results"][model_sel]
-            st.markdown(f"<br>", unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
             for metric, val in m.items():
                 pct = val * 100
                 color = "#14E0B4" if pct >= 80 else ("#FFD166" if pct >= 65 else "#FF7A7A")
@@ -997,8 +973,7 @@ elif page == "📊 Analisis":
                         <span style="color:{color};font-weight:800;font-size:1rem">{val:.4f}</span>
                     </div>
                     <div style="background:#1F2633;border-radius:7px;height:10px;overflow:hidden">
-                        <div style="width:{pct:.1f}%;background:{color};height:100%;border-radius:7px;
-                                    transition:width .8s ease"></div>
+                        <div style="width:{pct:.1f}%;background:{color};height:100%;border-radius:7px"></div>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -1265,9 +1240,8 @@ elif page == "📤 Ganti Dataset":
     st.markdown(f"""
     <div class="info-box">
     📌 Dataset aktif saat ini: <b>{st.session_state['data_source']}</b>
-    — {df.shape[0]} baris, {df.shape[1]} kolom. Upload dataset baru di bawah untuk mengganti.
-    Kolom wajib: <b>{', '.join(REQUIRED_COLUMNS)}</b> beserta kolom numerik epidemiologis lainnya.
-    Dataset baru baru benar-benar aktif setelah kamu <b>konfirmasi</b>, dan model akan dilatih ulang otomatis.
+    — {df.shape[0]} baris, {df.shape[1]} kolom.
+    Kolom wajib: <b>{', '.join(REQUIRED_COLUMNS)}</b>
     </div>
     """, unsafe_allow_html=True)
 
@@ -1285,7 +1259,7 @@ elif page == "📤 Ganti Dataset":
         col_pick, col_refresh = st.columns([4, 1])
         with col_pick:
             chosen_file = st.selectbox(
-                "File .xlsx terdeteksi di Colab",
+                "File .xlsx terdeteksi di folder",
                 ["-- Pilih file --"] + detected_files,
                 key="ganti_detected_pick",
             )
@@ -1319,10 +1293,7 @@ elif page == "📤 Ganti Dataset":
         st.dataframe(pending_df.head(10), use_container_width=True)
 
         if missing:
-            st.error(
-                f"❌ Kolom wajib tidak ditemukan: **{', '.join(missing)}**. "
-                "Dataset ini tidak bisa dipakai sampai kolom tersebut tersedia."
-            )
+            st.error(f"❌ Kolom wajib tidak ditemukan: **{', '.join(missing)}**.")
         else:
             new_median = pending_df["TB_Treatment_Success_Rate"].median()
             c1n, c2n, c3n = st.columns(3)
@@ -1332,8 +1303,7 @@ elif page == "📤 Ganti Dataset":
 
             st.markdown("""
             <div class="warn-box">
-            ⚠️ Konfirmasi akan <b>mengganti dataset aktif</b> untuk seluruh dashboard (Home, Analisis,
-            Prediksi) dan melatih ulang ketiga model dari awal. Dataset lama tidak otomatis tersimpan.
+            ⚠️ Konfirmasi akan <b>mengganti dataset aktif</b> untuk seluruh dashboard dan melatih ulang ketiga model.
             </div>
             """, unsafe_allow_html=True)
 
@@ -1344,7 +1314,7 @@ elif page == "📤 Ganti Dataset":
                     st.session_state["data_source"] = pending_name
                     st.session_state["load_error"] = None
                     st.cache_resource.clear()
-                    st.success(f"✅ Dataset aktif diganti ke **{pending_name}**. Memuat ulang dashboard...")
+                    st.success(f"✅ Dataset aktif diganti ke **{pending_name}**.")
                     st.rerun()
             with col_cancel:
                 st.button("❌ Batal", use_container_width=True, key="ganti_cancel_btn")
