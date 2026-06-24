@@ -1,3 +1,25 @@
+%%writefile app.py
+"""
+=============================================================
+  TUBERKULOSIS CLASSIFIER — Streamlit App (Colab-Friendly)
+=============================================================
+Jalankan di Colab:
+    !pip install streamlit pyngrok openpyxl plotly scikit-learn -q
+    from pyngrok import ngrok
+    ngrok.set_auth_token("YOUR_NGROK_TOKEN")  # optional
+    !streamlit run app.py &
+    public_url = ngrok.connect(8501)
+    print(public_url)
+
+Atau lokal:
+    pip install streamlit openpyxl plotly scikit-learn
+    streamlit run app.py
+
+CATATAN:
+    Letakkan file "Tuberculosis_Trends 2000-2023.xlsx" di folder yang sama dengan
+    app.py — dashboard otomatis membaca file tersebut saat pertama jalan.
+    Dataset aktif bisa diganti kapan saja lewat menu sidebar "📤 Ganti Dataset".
+"""
 
 import streamlit as st
 import pandas as pd
@@ -25,6 +47,7 @@ REQUIRED_COLUMNS = ["Country", "Region", "Income_Level", "Year", "TB_Treatment_S
 
 
 def validate_columns(dataframe):
+    """Kembalikan list kolom wajib yang hilang dari dataframe."""
     return [c for c in REQUIRED_COLUMNS if c not in dataframe.columns]
 
 
@@ -487,7 +510,7 @@ def train_models(df_hash):
 
 
 # ─────────────────────────────────────────────
-# Dataset dijamin tersedia — langsung ke dashboard
+# Dataset
 # ─────────────────────────────────────────────
 df = st.session_state["df"]
 
@@ -499,7 +522,7 @@ with st.sidebar:
     <div class="sidebar-logo">
         <div class="icon">🫁</div>
         <div class="name">TBC Classifier</div>
-        <div class="version">Dashboard @045|063</div>
+        <div class="version">Dashboard v2.0</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -1339,7 +1362,7 @@ elif page == "📤 Ganti Dataset":
 
             col_confirm, col_cancel = st.columns(2)
             with col_confirm:
-                if st.button("✅ Ya, gunakan dataset ini", type="primary", use_container_width=True, key="ganti_confirm_btn"):
+                if st.button("🔄 Reset Dataset", type="primary", use_container_width=True, key="ganti_confirm_btn"):
                     st.session_state["df"] = pending_df
                     st.session_state["data_source"] = pending_name
                     st.session_state["load_error"] = None
