@@ -1038,14 +1038,13 @@ elif page == "📊 Analisis":
                 try:
                     v = float(val)
                     if v >= 0.85:
-                        bg = "rgba(46,204,113,0.35)"
+                        return "background-color: #1a6e3c; color: #FFFFFF; font-weight: 800;"
                     elif v >= 0.70:
-                        bg = "rgba(255,209,102,0.30)"
+                        return "background-color: #7a5500; color: #FFFFFF; font-weight: 800;"
                     else:
-                        bg = "rgba(255,92,92,0.30)"
-                    return f"background-color: {bg}; color: #FFFFFF; font-weight: 700;"
+                        return "background-color: #8a1c1c; color: #FFFFFF; font-weight: 800;"
                 except Exception:
-                    return ""
+                    return "color: #000000; font-weight: 700;"
 
             styled = tbl_df.style.map(color_value).format("{:.4f}")
             st.dataframe(styled, use_container_width=True)
