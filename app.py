@@ -6,7 +6,7 @@ import glob
 import warnings
 warnings.filterwarnings("ignore")
 
-# ─── Safe imports dengan pesan error yang jelas ───
+
 try:
     import plotly.express as px
     import plotly.graph_objects as go
@@ -332,6 +332,35 @@ header { visibility: visible; }
     color: var(--text-heading) !important;
     border-color: var(--border) !important;
 }
+.stSelectbox div[data-baseweb="select"] > div > div {
+    color: var(--text-heading) !important;
+}
+/* Dropdown list items */
+[data-baseweb="popover"] {
+    background: #1F2633 !important;
+}
+[data-baseweb="menu"] {
+    background: #1F2633 !important;
+}
+[data-baseweb="menu"] li {
+    background: #1F2633 !important;
+    color: #FFFFFF !important;
+    font-weight: 600 !important;
+}
+[data-baseweb="menu"] li:hover {
+    background: #14E0B4 !important;
+    color: #062A22 !important;
+}
+[role="option"] {
+    background: #1F2633 !important;
+    color: #FFFFFF !important;
+    font-weight: 600 !important;
+}
+[role="option"]:hover, [aria-selected="true"][role="option"] {
+    background: #14E0B4 !important;
+    color: #062A22 !important;
+    font-weight: 800 !important;
+}
 .stTextInput input, .stNumberInput input {
     background: var(--bg-input) !important;
     color: var(--text-heading) !important;
@@ -544,7 +573,7 @@ with st.sidebar:
     <div class="sidebar-logo">
         <div class="icon">🫁</div>
         <div class="name">TBC Classifier</div>
-        <div class="version">Dashboard v2.0</div>
+        <div class="version">Dashboard Words World Tuberculosis</div>
     </div>
     """, unsafe_allow_html=True)
 
