@@ -6,7 +6,7 @@ import glob
 import warnings
 warnings.filterwarnings("ignore")
 
-
+# ─── Safe imports dengan pesan error yang jelas ───
 try:
     import plotly.express as px
     import plotly.graph_objects as go
@@ -335,31 +335,46 @@ header { visibility: visible; }
 .stSelectbox div[data-baseweb="select"] > div > div {
     color: var(--text-heading) !important;
 }
-/* Dropdown list items */
-[data-baseweb="popover"] {
-    background: #1F2633 !important;
+/* ── Dropdown popup & list items — cover semua versi Streamlit ── */
+[data-baseweb="popover"],
+[data-baseweb="popover"] > div,
+[data-baseweb="popover"] ul,
+[data-baseweb="menu"],
+[data-baseweb="menu"] > ul {
+    background-color: #1F2633 !important;
+    border: 1px solid rgba(20,224,180,0.30) !important;
 }
-[data-baseweb="menu"] {
-    background: #1F2633 !important;
-}
-[data-baseweb="menu"] li {
-    background: #1F2633 !important;
+[data-baseweb="menu"] li,
+[data-baseweb="option"],
+[role="option"],
+[role="listbox"] > div,
+[role="listbox"] li {
+    background-color: #1F2633 !important;
     color: #FFFFFF !important;
     font-weight: 600 !important;
+    font-size: 0.97rem !important;
 }
-[data-baseweb="menu"] li:hover {
-    background: #14E0B4 !important;
+[data-baseweb="menu"] li:hover,
+[data-baseweb="option"]:hover,
+[role="option"]:hover {
+    background-color: #14E0B4 !important;
     color: #062A22 !important;
+    font-weight: 700 !important;
 }
-[role="option"] {
-    background: #1F2633 !important;
+[aria-selected="true"][role="option"],
+[data-highlighted][role="option"] {
+    background-color: #0B8F73 !important;
     color: #FFFFFF !important;
-    font-weight: 600 !important;
-}
-[role="option"]:hover, [aria-selected="true"][role="option"] {
-    background: #14E0B4 !important;
-    color: #062A22 !important;
     font-weight: 800 !important;
+}
+[data-baseweb="popover"] *,
+[data-baseweb="menu"] *,
+[role="listbox"] * {
+    color: #FFFFFF !important;
+}
+[data-baseweb="menu"] li:hover *,
+[role="option"]:hover * {
+    color: #062A22 !important;
 }
 .stTextInput input, .stNumberInput input {
     background: var(--bg-input) !important;
@@ -394,6 +409,42 @@ header { visibility: visible; }
 
 [data-testid="stAlert"] p { color: var(--text-heading) !important; font-weight: 600; }
 [data-testid="stDataFrame"] * { color: var(--text-body); }
+
+/* ── File Uploader ── */
+[data-testid="stFileUploader"] {
+    background: var(--bg-card2) !important;
+    border: 2px dashed var(--border) !important;
+    border-radius: 12px !important;
+    padding: 8px !important;
+}
+[data-testid="stFileUploader"] * {
+    color: var(--text-body) !important;
+}
+[data-testid="stFileUploaderDropzone"] {
+    background: var(--bg-card2) !important;
+}
+[data-testid="stFileUploaderDropzone"] * {
+    color: var(--text-body) !important;
+}
+[data-testid="stFileUploaderDropzoneInstructions"] {
+    color: var(--text-body) !important;
+}
+[data-testid="stFileUploaderDropzoneInstructions"] * {
+    color: var(--text-body) !important;
+}
+[data-testid="stFileUploaderDropzoneInstructions"] span,
+[data-testid="stFileUploaderDropzoneInstructions"] small,
+[data-testid="stFileUploaderDropzoneInstructions"] p {
+    color: var(--text-muted) !important;
+    font-size: 0.9rem !important;
+}
+[data-testid="stFileUploader"] button {
+    background: var(--primary) !important;
+    color: var(--text-on-primary) !important;
+    font-weight: 700 !important;
+    border-radius: 8px !important;
+    border: none !important;
+}
 </style>
 
 <div class="watermark">🫁 TBC Classifier &nbsp;|&nbsp; Citra Putri Ramadhani  |  Novita Widya Asmara &nbsp;|&nbsp; © 2026</div>
@@ -573,7 +624,7 @@ with st.sidebar:
     <div class="sidebar-logo">
         <div class="icon">🫁</div>
         <div class="name">TBC Classifier</div>
-        <div class="version">Dashboard Words World Tuberculosis</div>
+        <div class="version">Dashboard v2.0</div>
     </div>
     """, unsafe_allow_html=True)
 
