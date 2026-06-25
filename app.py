@@ -6,7 +6,6 @@ import glob
 import warnings
 warnings.filterwarnings("ignore")
 
-# ─── Safe imports dengan pesan error yang jelas ───
 try:
     import plotly.express as px
     import plotly.graph_objects as go
@@ -624,7 +623,7 @@ with st.sidebar:
     <div class="sidebar-logo">
         <div class="icon">🫁</div>
         <div class="name">TBC Classifier</div>
-        <div class="version">Dashboard v2.0</div>
+        <div class="version">Dashboard World Tuberculosis</div>
     </div>
     """, unsafe_allow_html=True)
 
