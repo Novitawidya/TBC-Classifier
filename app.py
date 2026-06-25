@@ -1047,7 +1047,7 @@ elif page == "📊 Analisis":
                 except Exception:
                     return ""
 
-            styled = tbl_df.style.applymap(color_value).format("{:.4f}")
+            styled = tbl_df.style.map(color_value).format("{:.4f}")
             st.dataframe(styled, use_container_width=True)
 
         except Exception as e:
